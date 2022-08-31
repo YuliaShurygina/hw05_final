@@ -14,7 +14,7 @@ from django.urls import reverse
 from posts.models import Comment, Follow, Group, Post, User
 
 POSTS_ON_SECOND_PAGE: int = 5
-TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.MEDIA_ROOT)
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
