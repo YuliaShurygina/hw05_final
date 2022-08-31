@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 from http.client import HTTPResponse
 from typing import Any, Dict, List, Tuple
@@ -59,6 +60,11 @@ class PostPagesTests(TestCase):
                          settings.POSTS_PER_PAGE
                          + POSTS_ON_SECOND_PAGE - 1)]
         Post.objects.order_by('-pub_date', '-id').bulk_create(posts)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        return super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_pages_use_correct_template(self) -> None:
         """Тесты, проверяющие, что во view-функциях
