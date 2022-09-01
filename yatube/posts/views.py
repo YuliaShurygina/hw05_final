@@ -9,15 +9,14 @@ from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
 from .models import Comment, Follow, Group, Post, User
-from .utils import get_page_context
+from .utils import get_page_obj
 
 
 @cache_page(20, key_prefix='index_page')
 def index(request: HttpRequest) -> HTTPResponse:
     """Главная страница:  Получение последних постов."""
-    post_list: QuerySet[Post] = Post.objects.select_related(
-        'group').select_related('author').all()
-    page_obj: Any = get_page_context(post_list, request)
+    post_list: QuerySet[Post] = Post.objects.select_related('group', 'author')
+    page_obj: Any = get_page_obj(post_list, request)
     context: Dict[str, QuerySet[Post]] = {
         'page_obj': page_obj
     }
@@ -27,8 +26,9 @@ def index(request: HttpRequest) -> HTTPResponse:
 def group_posts(request: HttpRequest, slug: str) -> HTTPResponse:
     """Получение списка последних постов группы."""
     group: Group = get_object_or_404(Group, slug=slug)
-    group_post_list: QuerySet[Post] = group.posts.all()
-    page_obj: Any = get_page_context(group_post_list, request)
+    group_post_list: QuerySet[Post] = group.posts.select_related(
+        'group', 'author')
+    page_obj: Any = get_page_obj(group_post_list, request)
     context: Dict[str, Any] = {
         'page_obj': page_obj,
         'group': group,
@@ -39,17 +39,12 @@ def group_posts(request: HttpRequest, slug: str) -> HTTPResponse:
 def profile(request: HttpRequest, username: str) -> HTTPResponse:
     """Получение списка  постов одного автора(пользователя)."""
     author: str = get_object_or_404(User, username=username)
-    author_posts: QuerySet[Post] = Post.objects.all().filter(
-        author=author)
+    author_posts: QuerySet[Post] = author.posts.select_related(
+        'group', 'author')
     posts_count: int = author_posts.count()
-    page_obj: Any = get_page_context(author_posts, request)
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(
-            user=request.user.id,
-            author=author.id
-        ).exists()
-    else:
-        following = False
+    page_obj: Any = get_page_obj(author_posts, request)
+    following = request.user.is_authenticated and Follow.objects.filter(
+        author=author, user=request.user).exists()
     context: Dict[str, Any] = {
         'author': author,
         'posts_count': posts_count,
@@ -64,7 +59,7 @@ def post_detail(request: HttpRequest, post_id: int) -> HTTPResponse:
     post: Post = get_object_or_404(Post, pk=post_id)
     n_posts: int = post.author.posts.count()
     form: CommentForm = CommentForm()
-    comments: Comment = Comment.objects.filter(post__id=post_id)
+    comments: QuerySet[Comment] = Comment.objects.filter(post__id=post_id)
     context: Dict[str, Any] = {
         'post': post,
         'n_posts': n_posts,
@@ -128,7 +123,7 @@ def add_comment(request: HttpRequest, post_id: int) -> HTTPResponse:
 def follow_index(request):
     """Страница постов авторов, на которых подписан текущий пользователь."""
     followed_posts = Post.objects.filter(author__following__user=request.user)
-    page_obj: Any = get_page_context(followed_posts, request)
+    page_obj: Any = get_page_obj(followed_posts, request)
     context: Dict[str, QuerySet[Post]] = {
         'page_obj': page_obj
     }
@@ -139,16 +134,16 @@ def follow_index(request):
 def profile_follow(request, username):
     """Подписаться на автора."""
     author: str = get_object_or_404(User, username=username)
-    following = request.user.follower.filter(author=author).exists()
-    if request.user != author and not following:
-        follow = Follow(user=request.user, author=author)
-        follow.save()
+    if request.user != author:
+        Follow.objects.get_or_create(
+            user=request.user, author=author)
+
     return redirect('posts:profile', username=author)
 
 
 @ login_required
 def profile_unfollow(request, username):
-    author: str = get_object_or_404(User, username=username)
+    author: User = get_object_or_404(User, username=username)
     Follow.objects.filter(
         user=request.user,
         author=author

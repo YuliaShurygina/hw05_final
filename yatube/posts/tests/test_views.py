@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import shutil
 import tempfile
 from http.client import HTTPResponse
@@ -51,7 +52,6 @@ class PostPagesTests(TestCase):
 
     def setUp(self) -> None:
         cache.clear()
-
         posts: List[Post] = [Post(
             author=PostPagesTests.author,
             text=f'Тестовый пост {i}',
@@ -186,6 +186,7 @@ class PostPagesTests(TestCase):
         """Проверка, что если при создании поста указать группу,
            то этот пост появляется на главной странице,
             на странице профайла, на странице группы."""
+        cache.clear()
         pages: Tuple[Any, ...] = (
             reverse('posts:index'),
             reverse('posts:group_list', kwargs={
@@ -215,7 +216,7 @@ class PostPagesTests(TestCase):
             reverse('posts:profile', kwargs={'username': 'author'}),
             reverse('posts:post_edit', kwargs={'post_id': self.post1.id}),
         )
-        small_gif = (
+        small_gif: Any = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -223,7 +224,7 @@ class PostPagesTests(TestCase):
             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
             b'\x0A\x00\x3B'
         )
-        uploaded = SimpleUploadedFile(
+        uploaded: Any = SimpleUploadedFile(
             name='small.gif',
             content=small_gif,
             content_type='image/gif'
@@ -242,8 +243,8 @@ class PostPagesTests(TestCase):
     def test_after_sending_comment_is_on_post_detail_page(self) -> None:
         """Проверка, что после успешной отправки
            комментарий появляется на странице поста."""
-        comments_count = Comment.objects.count()
-        form_data = {
+        comments_count: int = Comment.objects.count()
+        form_data: Dict[str, Any] = {
             'text': 'Новый комментарий',
         }
         response = self.author_client.post(
@@ -256,11 +257,11 @@ class PostPagesTests(TestCase):
         self.assertEqual(Comment.objects.count(), comments_count + 1)
         self.assertTrue(
             Comment.objects.filter(
-                text='Новый комментарий',
+                text=form_data['text'],
             ).exists()
         )
 
-    def test_index_cash(self) -> None:
+    def test_index_cache(self) -> None:
         """Проверка кеширования главной страницы."""
         cache.clear()
         posts_count = Post.objects.count()
@@ -269,7 +270,7 @@ class PostPagesTests(TestCase):
             text='проверка кэша',
             group=self.group,
         )
-        response = self.author_client.get(reverse(
+        response: HTTPResponse = self.author_client.get(reverse(
             'posts:index'))
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertTrue(
@@ -279,18 +280,18 @@ class PostPagesTests(TestCase):
             ).exists()
         )
         new_post.delete()
-        cached_response = self.author_client.get(reverse(
+        cached_response: HTTPResponse = self.author_client.get(reverse(
             'posts:index'))
         self.assertEqual(response.content, cached_response.content)
         cache.clear()
-        response_cleared = self.author_client.get(reverse('posts:index'))
+        response_cleared: HTTPResponse = self.author_client.get(
+            reverse('posts:index'))
         self.assertNotEqual(response_cleared.content, cached_response.content)
 
-    def test_post_appears_on_follow_index_page(self):
+    def test_post_appears_on_follow_index_page_for_followers(self):
         """Новая запись пользователя появляется в ленте тех,
-            кто на него подписан и не появляется
-            в ленте тех, кто не подписан."""
-
+            кто на него подписан."""
+        cache.clear()
         Follow.objects.create(
             author=self.author,
             user=self.user,
@@ -302,22 +303,57 @@ class PostPagesTests(TestCase):
         )
         response: Any = self.user_follower.get(
             '/follow/')
-        context = response.context['page_obj'][0]
+        context: Any = response.context['page_obj'][0]
         self.assertEqual(context, following_post)
+
+    def test_post_not_appears_on_follow_index_page_for_unfollowers(self):
+        """Новая запись пользователя не появляется в ленте тех,
+             кто не подписан."""
+
+        Follow.objects.create(
+            author=self.author,
+            user=self.user,
+        )
+        following_post: Post = Post.objects.create(
+            author=self.author,
+            text='проверка подписки',
+            group=self.group,
+        )
         response: Any = self.unfollowed_user.get(
             '/follow/')
         self.assertNotContains(response, following_post)
 
-    def test_authorised_user_can_follow_and_unfollow(self):
+    def test_authorised_user_can_follow(self):
         """Авторизованный пользователь может подписываться
-            на других пользователей и удалять их из подписок."""
-
+            на других пользователей."""
         self.user_follower.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.all().count(), 1)
+        response: HTTPResponse = self.unfollowed_user.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.author.username}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertTrue(
+            Follow.objects.filter(
+                author=self.author,
+                user=self.some_user
+            ).exists()
+        )
 
+    def test_authorised_user_can_unfollow(self):
+        """Авторизованный пользователь может отписаться от подписок."""
         self.user_follower.get(
             reverse('posts:profile_unfollow',
                     kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.all().count(), 0)
+        response: HTTPResponse = self.user_follower.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author.username}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertFalse(
+            Follow.objects.filter(
+                author=self.author,
+                user=self.user
+            ).exists()
+        )
