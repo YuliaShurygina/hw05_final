@@ -31,8 +31,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '[::1]',
     'testserver',
-    'www.YuliaShurygina.pythonanywhere.com',
-    'YuliaShurygina.pythonanywhere.com',
+    '51.250.78.57',
 ]
 
 
