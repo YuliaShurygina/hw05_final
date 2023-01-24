@@ -1,3 +1,36 @@
-# hw05_final
+# Социальная сеть YaTube для публикации постов и картинок (Яндекс.Практикум)
+## Описание
+Реализована система регистрации новых пользователей, восстановление паролей пользователей через почту, изменение пароля, вход и выход из аккаунта. Пользователи могут подписываться на избранных авторов, оставлять и удалять комментарии к постам, оставлять новые посты на главной странице и в тематических группах, прикреплять изображения к публикуемым постам.
+Система тестирования проекта на unittest, пагинация постов и кэширование страниц.
 
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
+
+ Проект веб-сайта yatube позволяет регистрацию, вход, выход, смену пароля
+
+
+## Системные требования
+* Python 3.8+
+* Works on Linux, Windows, macOS, BSD
+## Стек технологий
+* Python 3.8
+* Django 2.2
+* Unittest
+* Pytest
+* SQLite3
+* CSS
+* JS
+* HTML
+## Установка:
+* 1) Клонировать репозиторий и перейти в него в командной строке:
+git clone https://github.com/YuliaShurygina/hw05_final cd hw05_final
+
+* 2) Cоздать и активировать виртуальное окружение:
+python -m venv venv source venv/bin/activate python -m pip install --upgrade pip
+
+* 3) Установить зависимости из файла requirements.txt:
+pip install -r requirements.txt
+
+* 4) Выполнить миграции:
+python manage.py migrate
+
+* 5) Запустить проект:
+python manage.py runserver
