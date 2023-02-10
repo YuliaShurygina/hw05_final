@@ -1,6 +1,6 @@
-from http import HTTPStatus
 import shutil
 import tempfile
+from http import HTTPStatus
 from http.client import HTTPResponse
 from typing import Any, Dict, List, Tuple
 
@@ -11,7 +11,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models.query import QuerySet
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-
 from posts.models import Comment, Follow, Group, Post, User
 
 POSTS_ON_SECOND_PAGE: int = 5
@@ -64,7 +63,7 @@ class PostPagesTests(TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         return super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        return shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_pages_use_correct_template(self) -> None:
         """Тесты, проверяющие, что во view-функциях
@@ -207,7 +206,8 @@ class PostPagesTests(TestCase):
                 self.assertIn(new_post, posts_by_context)
 
     def test_picture_is_in_pages_context(self) -> None:
-        """При выводе поста с картинкой изображение передаётся в словаре context
+        """При выводе поста с картинкой изображение передаётся в
+            словаре context
             на главную страницу, на страницу профайла, на страницу группы,
             на отдельную страницу поста."""
         urls: Tuple[Any, ...] = (

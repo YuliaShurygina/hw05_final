@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-
 from posts.forms import PostForm
 from posts.models import Group, Post, User
 
@@ -35,7 +34,7 @@ class PostCreateFormTests(TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         return super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        return shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_create_post(self):
         """Валидная форма со страницы создания поста создает запись в Post."""

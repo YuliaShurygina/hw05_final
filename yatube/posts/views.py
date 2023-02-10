@@ -103,8 +103,7 @@ def post_edit(request: HttpRequest, post_id: int) -> HTTPResponse:
             'post': post,
         }
         return render(request, 'posts/create_post.html', context)
-    else:
-        return redirect('posts:post_detail', post_id)
+    return redirect('posts:post_detail', post_id)
 
 
 @login_required
