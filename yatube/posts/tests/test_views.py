@@ -63,7 +63,7 @@ class PostPagesTests(TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         return super().tearDownClass()
-        return shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_pages_use_correct_template(self) -> None:
         """Тесты, проверяющие, что во view-функциях

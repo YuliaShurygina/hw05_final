@@ -34,7 +34,7 @@ class PostCreateFormTests(TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         return super().tearDownClass()
-        return shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_create_post(self):
         """Валидная форма со страницы создания поста создает запись в Post."""
